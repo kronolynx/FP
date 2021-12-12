@@ -29,5 +29,5 @@ trait ApplicativeN[F[_]] extends ApplyN[F] {
 trait MonadN[F[_]] extends ApplicativeN[F] {
 //  def pure[A](value: A): F[A]
 
-  def flatMap[A, B](value: F[A])(func: A => F[B]): F[B]
+  def flatMap[A, B](value: F[A])(f: A => F[B]): F[B]
 }
