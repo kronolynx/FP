@@ -49,14 +49,20 @@ object NelInstances {
 
   implicit def nelMonad : MonadN[Nel] = new MonadN[Nel] {
     override def flatMap[A, B](value: Nel[A])(f: A => Nel[B]): Nel[B] =
-      value match {
-        case ConstN(head, tail) =>
-          f(head) match {
-            case ConstN(head, _) => ConstN(head, flatMap(tail)(f))
-            case LastN(last) => ConstN(last, flatMap(tail)(f))
-          }
-        case LastN(value) => f(value)
-    }
+      {
+        def append[C](a: Nel[C], b: Nel[C]): Nel[C] = a match {
+          case LastN(last) => ConstN(last, b)
+          case ConstN(head, tail) => ConstN(head, append(tail, b))
+        }
+        value match {
+          case ConstN(head, tail) =>
+            f(head) match {
+              case ConstN(head, tailB) => ConstN(head, append(tailB, flatMap(tail)(f)))
+              case LastN(last) => ConstN(last, flatMap(tail)(f))
+            }
+          case LastN(value) => f(value)
+        }
+      }
 
     override def pure[A](a: A): Nel[A] = LastN(a)
 
@@ -100,5 +106,12 @@ object MainNel extends App {
 
   val a4 = a1.map(_ * 3)
   println(a4)
+
+  val a5 = for {
+    a <- a1
+    b <- a2
+  } yield a * b
+
+  println(a5)
 }
 

@@ -44,13 +44,21 @@ object ListCInstances {
 
   implicit def monadN: MonadN[ListC] = new MonadN[ListC] {
     override def flatMap[A, B](value: ListC[A])(f: A => ListC[B]): ListC[B] =
-      value match {
-        case ConstC(head, tail) =>
-          f(head) match {
-            case ConstC(head, _) => ConstC(head, flatMap(tail)(f))
-            case NilC => flatMap(tail)(f)
-          }
-        case NilC => NilC
+      {
+        def append[C](a: ListC[C], b: ListC[C]): ListC[C] = a match {
+          case NilC => b
+          case ConstC(head, tail) => ConstC(head, append(tail, b))
+        }
+
+        value match {
+          case ConstC(head, tail) =>
+            f(head) match {
+              case ConstC(head, tailB) =>
+                ConstC(head, append(tailB, flatMap(tail)(f)) )
+              case NilC => flatMap(tail)(f)
+            }
+          case NilC => NilC
+        }
       }
 
     override def pure[A](a: A): ListC[A] = ConstC(a, NilC)
@@ -95,4 +103,11 @@ object MainListC extends App {
 
   val a4 = a1.map(_ * 3)
   println(a4)
+
+  val a5 = for {
+    a <- a1
+    b <- a2
+  } yield a * b
+
+  println(a5)
 }
